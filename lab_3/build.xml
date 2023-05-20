@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<project name="lab_3" default="build">
+    <property file="build.properties"/>
+
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="libs/ant-contrib-1.0b3.jar"/>
+        </classpath>
+    </taskdef>
+
+    <path id="classpath.source">
+        <fileset dir="${libs}" includes="*.jar"/>
+    </path>
+
+    <macrodef name="git-status">
+        <attribute name="outputproperty"/>
+        <sequential>
+            <exec executable="git" outputproperty="@{outputproperty}">
+                <arg value="status"/>
+            </exec>
+            <echo>${@{outputproperty}}</echo>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="myzip">
+        <sequential>
+            <exec executable="powershell">
+                <arg value="Compress-Archive"/>
+                <arg value="java"/>
+                <arg value="java.zip"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="git-commit">
+        <sequential>
+            <exec executable="git">
+                <arg value="add"/>
+                <arg value="."/>
+            </exec>
+
+            <input message="Enter the commit message: "
+                   addproperty="commit.message"/>
+
+            <exec executable="git">
+                <arg value="commit"/>
+                <arg value="-m"/>
+                <arg value="${commit.message}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="${compile.classes}"/>
+        <javac destdir="${compile.classes}" includeantruntime="false">
+            <src path="${main}"/>
+            <classpath refid="classpath.source"/>
+        </javac>
+        <mkdir dir="${compile.tests}"/>
+        <javac destdir="${compile.tests}" includeantruntime="false">
+            <src path="${test}"/>
+            <classpath>
+                <pathelement location="${compile.classes}"/>
+                <path refid="classpath.source"/>
+            </classpath>
+        </javac>
+    </target>
+
+     <target name="build" depends="music">
+        <antcall target="compile"/>
+        <jar destfile="${dest.jar}" basedir="${compile.classes}">
+            <manifest>
+                <attribute name="Built-By" value="${creators}"/>
+                <attribute name="Implementation-Version" value="${version} ${date}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="clean">
+        <delete dir="${compile}"/>
+    </target>
+
+    <target name="music">
+        <sound>
+            <success source="${music.success.build}"/>
+            <fail source="${music.fail.build}"/>
+        </sound>
+    </target>
+
+    <target name="test" depends="build">
+        <mkdir dir="${report}"/>
+        <junitlauncher printsummary="true">
+            <testclasses outputdir="${report}">
+                <fileset dir="${compile.tests}">
+                    <include name="**/*Test*.class"/>
+                </fileset>
+                <listener type="legacy-plain"/>
+            </testclasses>
+            <classpath>
+                <pathelement location="${compile.tests}"/>
+                <pathelement location="${compile.classes}"/>
+                <path refid="classpath.source"/>
+            </classpath>
+        </junitlauncher>
+    </target>
+
+    <target name="diff">
+        <git-status outputproperty="git.status.output"/>
+            <condition property="commit">
+               <contains string="${git.status.output}" substring=".java"/>
+            </condition>
+        <if>
+            <isset property="commit"/>
+            <then>
+                <echo>Class changes found!</echo>
+                <git-commit/>
+            </then>
+            <else>
+                <echo>Class changes not found!</echo>
+            </else>
+        </if>
+    </target>
+
+    <target name="check">
+        <delete file="${zip}"/>
+        <zip destfile="${zip}" basedir="${java}" modificationtime="${time}"/>
+        <checksum file="${zip}" property="MD5"/>
+        <echo>jdk sum: ${MD5}</echo>
+        <checksum file="${jdk}" property="MD51"/>
+        <echo>standart sum: ${MD51}</echo>
+        <checksum file="${jdk}" property="${MD5}" verifyProperty="isEqual"/>
+        <if>
+            <istrue value="${isEqual}"/>
+            <then>
+                <echo>jdk good!</echo>
+            </then>
+            <else>
+                <echo>update jdk!</echo>
+                <antcall target="download-jdk"/>
+            </else>
+        </if>
+        <delete file="${zip}"/>
+    </target>
+
+    <target name="download-jdk">
+        <delete dir="${java}"/>
+        <unzip src="${jdk}" dest="java"/>
+    </target>
+
+</project>
