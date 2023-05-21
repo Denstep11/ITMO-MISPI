@@ -144,12 +144,13 @@
 
     <target name="download-jdk">
         <delete dir="${java}"/>
-        <unzip src="${jdk}" dest="java"/>
+        <unzip src="${jdk}" dest="${java}"/>
     </target>
 
     <target name="start">
-        <mkdir dir="jdk_dwn"/>
-        <unzip src="java.zip" dest="${jdk}"/>
+        <mkdir dir="${dir.jdk}"/>
+        <copy file="java.zip" todir="${dir.jdk}"/>
+        <unzip src="${jdk}" dest="${java}"/>
     </target>
 
 </project>
