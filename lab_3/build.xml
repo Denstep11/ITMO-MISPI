@@ -147,4 +147,9 @@
         <unzip src="${jdk}" dest="java"/>
     </target>
 
+    <target name="start">
+        <mkdir dir="jdk_dwn"/>
+        <unzip src="java.zip" dest="${jdk}"/>
+    </target>
+
 </project>
