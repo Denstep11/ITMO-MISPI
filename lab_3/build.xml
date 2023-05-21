@@ -149,8 +149,8 @@
 
     <target name="start">
         <mkdir dir="${dir.jdk}"/>
-        <copy file="java.zip" todir="${dir.jdk}"/>
-        <unzip src="${jdk}" dest="${java}"/>
+        <unzip src="java.zip" dest="${java}"/>
+        <zip destfile="${jdk}" basedir="${java}" modificationtime="${time}"/>
     </target>
 
 </project>
